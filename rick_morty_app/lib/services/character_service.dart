@@ -7,8 +7,8 @@ import 'package:rick_morty_app/models/character.dart';
 class CharacterService {
   final String baseUrl = "https://rickandmortyapi.com/api/character";
 
-  Future<List> getAll() async {
-    final http.Response response = await http.get(Uri.parse(baseUrl));
+  Future<List> getAll(int page) async {
+    final http.Response response = await http.get(Uri.parse("$baseUrl?page=$page"));
 
     if (response.statusCode == HttpStatus.ok){
       final jsonResponse = json.decode(response.body);

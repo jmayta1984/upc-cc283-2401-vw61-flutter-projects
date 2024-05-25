@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:rick_morty_app/models/character.dart';
 import 'package:rick_morty_app/services/character_service.dart';
 
@@ -25,35 +26,51 @@ class CharacterList extends StatefulWidget {
 }
 
 class _CharacterListState extends State<CharacterList> {
-  List _characters = [];
-  final CharacterService  _characterService = CharacterService();
+  final CharacterService _characterService = CharacterService();
+  static const _pageSize = 20;
 
-  initialize() async {
-    _characters = await _characterService.getAll();
-    setState(() {
-      _characters = _characters;
-    });
-  }
-
+  final PagingController<int, dynamic> _pagingController =
+      PagingController(firstPageKey: 1);
 
   @override
   void initState() {
-    initialize();
+    _pagingController.addPageRequestListener(
+      (pageKey) {
+        _fetchPage(pageKey);
+      },
+    );
     super.initState();
+  }
+
+  _fetchPage(int pageKey) async {
+    try {
+      final newItems = await _characterService.getAll(pageKey);
+      final isLastPage = newItems.length < _pageSize;
+      if (isLastPage) {
+        _pagingController.appendLastPage(newItems);
+      } else {
+        final nextPageKey = pageKey + 1;
+        _pagingController.appendPage(newItems, nextPageKey);
+      }
+    } catch (error) {
+      _pagingController.error = error;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      itemCount: _characters.length,
+    return PagedGridView<int, dynamic>(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisSpacing: 8.0,
         crossAxisSpacing: 8.0,
       ),
-      itemBuilder: (context, index) {
-        return CharacterItem(character: _characters[index]);
-      },
+      pagingController: _pagingController,
+      builderDelegate: PagedChildBuilderDelegate(
+        itemBuilder: (context, item, index) => CharacterItem(
+          character: item,
+        ),
+      ),
     );
   }
 }
@@ -65,12 +82,41 @@ class CharacterItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  Card(
-      child: Column (children: [
-        Image.network(character.image),
-        Text(character.name),
-        Text(character.species)
-      ],),
+    MaterialColor color;
+    switch (character.status) {
+      case "Alive":
+        color = Colors.green;
+        break;
+      case "Dead":
+        color = Colors.red;
+        break;
+      default:
+        color = Colors.grey;
+        break;
+    }
+
+    return Card(
+      child: Column(
+        children: [
+          Expanded(child: Image.network(character.image)),
+          Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: Text(
+              character.name,
+              maxLines: 1,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: Row(
+              children: [
+                Icon(Icons.person, color: color),
+                Expanded(child: Text(character.species, maxLines: 1,))
+              ],
+            ),
+          )
+        ],
+      ),
     );
   }
 }
