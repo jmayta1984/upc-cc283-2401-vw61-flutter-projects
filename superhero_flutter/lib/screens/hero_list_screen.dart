@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:superhero_flutter/dao/hero_dao.dart';
+import 'package:superhero_flutter/models/hero.dart';
 import 'package:superhero_flutter/services/hero_service.dart';
 
 class HeroListScreen extends StatefulWidget {
@@ -19,7 +21,7 @@ class _HeroListScreenState extends State<HeroListScreen> {
           preferredSize: const Size.fromHeight(100),
           child: SafeArea(
             child: Column(children: [
-              const Text("Search"),
+              const Text("Super Hero"),
               Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Container(
@@ -66,7 +68,7 @@ class HeroList extends StatefulWidget {
 class _HeroListState extends State<HeroList> {
   final _heroService = HeroService();
   List _heros = [];
- 
+
   @override
   Widget build(BuildContext context) {
     if (widget.query.isEmpty) {
@@ -84,16 +86,61 @@ class _HeroListState extends State<HeroList> {
             return ListView.builder(
               itemCount: _heros.length,
               itemBuilder: (context, index) {
-                return Card(
-                  child: ListTile(
-                    title: Text(_heros[index].name),
-                    subtitle: Text(_heros[index].fullName),
-                    leading: Image.network(_heros[index].path),
-                  ),
-                );
+                return SuperHeroItem(hero: _heros[index]);
               },
             );
           }
         });
+  }
+}
+
+class SuperHeroItem extends StatefulWidget {
+  const SuperHeroItem({super.key, required this.hero});
+  final SuperHero hero;
+
+  @override
+  State<SuperHeroItem> createState() => _SuperHeroItemState();
+}
+
+class _SuperHeroItemState extends State<SuperHeroItem> {
+  bool _isFavorite = false;
+  final HeroDao _heroDao = HeroDao();
+
+  initialize() async {
+    _isFavorite = await _heroDao.isFavorite(widget.hero);
+    setState(() {
+      _isFavorite = _isFavorite;
+    });
+  }
+
+  @override
+  void initState() {
+    initialize();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(widget.hero.name),
+        subtitle: Text(widget.hero.fullName),
+        leading: Image.network(widget.hero.path),
+        trailing: IconButton(
+          icon: Icon(
+            Icons.favorite,
+            color: _isFavorite ? Colors.red : Colors.grey,
+          ),
+          onPressed: () {
+            setState(() {
+              _isFavorite = !_isFavorite;
+            });
+            _isFavorite
+                ? _heroDao.insert(widget.hero)
+                : _heroDao.delete(widget.hero);
+          },
+        ),
+      ),
+    );
   }
 }
