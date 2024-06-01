@@ -14,6 +14,12 @@ class HeroDao {
         .delete(AppDatabase().tableName, where: "id = ?", whereArgs: [hero.id]);
   }
 
+  Future<List> fetchAll() async {
+    Database database = await AppDatabase().openDB();
+    List maps = await database.query(AppDatabase().tableName);
+    return maps.map((map) => FavoriteHero.fromMap(map)).toList();
+  }
+
   Future<bool> isFavorite(SuperHero hero) async {
     Database database = await AppDatabase().openDB();
     List maps = await database

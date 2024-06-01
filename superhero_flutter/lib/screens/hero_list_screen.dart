@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:superhero_flutter/dao/hero_dao.dart';
 import 'package:superhero_flutter/models/hero.dart';
+import 'package:superhero_flutter/screens/hero_detail_screen.dart';
 import 'package:superhero_flutter/services/hero_service.dart';
 
 class HeroListScreen extends StatefulWidget {
@@ -21,7 +22,6 @@ class _HeroListScreenState extends State<HeroListScreen> {
           preferredSize: const Size.fromHeight(100),
           child: SafeArea(
             child: Column(children: [
-              const Text("Super Hero"),
               Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Container(
@@ -108,9 +108,11 @@ class _SuperHeroItemState extends State<SuperHeroItem> {
 
   initialize() async {
     _isFavorite = await _heroDao.isFavorite(widget.hero);
-    setState(() {
-      _isFavorite = _isFavorite;
-    });
+    if (mounted) {
+      setState(() {
+        _isFavorite = _isFavorite;
+      });
+    }
   }
 
   @override
@@ -121,24 +123,35 @@ class _SuperHeroItemState extends State<SuperHeroItem> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(widget.hero.name),
-        subtitle: Text(widget.hero.fullName),
-        leading: Image.network(widget.hero.path),
-        trailing: IconButton(
-          icon: Icon(
-            Icons.favorite,
-            color: _isFavorite ? Colors.red : Colors.grey,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HeroDetailScreen(hero: widget.hero),
+            ));
+      },
+      child: Card(
+        child: ListTile(
+          title: Text(widget.hero.name),
+          subtitle: Text(widget.hero.fullName),
+          leading: Hero(
+            tag: widget.hero.id,
+            child: Image.network(widget.hero.path)),
+          trailing: IconButton(
+            icon: Icon(
+              Icons.favorite,
+              color: _isFavorite ? Colors.red : Colors.grey,
+            ),
+            onPressed: () {
+              setState(() {
+                _isFavorite = !_isFavorite;
+              });
+              _isFavorite
+                  ? _heroDao.insert(widget.hero)
+                  : _heroDao.delete(widget.hero);
+            },
           ),
-          onPressed: () {
-            setState(() {
-              _isFavorite = !_isFavorite;
-            });
-            _isFavorite
-                ? _heroDao.insert(widget.hero)
-                : _heroDao.delete(widget.hero);
-          },
         ),
       ),
     );
