@@ -18,4 +18,13 @@ class Package {
         description = json["descripcion"],
         location = json["ubicacin"],
         image = json["imagen"];
+
+  Map<String, dynamic> toMap() {
+    return {
+      "id": id,
+      "name": name,
+      "description": description,
+      "image": image,
+    };
+  }
 }

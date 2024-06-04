@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:turismo_app/dao/package_dao.dart';
 import 'package:turismo_app/models/package.dart';
 import 'package:turismo_app/services/package_service.dart';
 
@@ -59,37 +60,101 @@ class PackageList extends StatefulWidget {
 }
 
 class _PackageListState extends State<PackageList> {
-  List _packages = [];
+  List<Package> _packages = [];
   final PackageService _packageService = PackageService();
-
-  search() async {
-    _packages = await _packageService.getByPlaceAndType(
-        widget.place, widget.packageType);
-    if (mounted) {
-      setState(() {
-        _packages = _packages;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    search();
-    return ListView.builder(
-      itemCount: _packages.length,
-      itemBuilder: (context, index) {
-        return PackageItem(package: _packages[index]);
-      },
-    );
+    return FutureBuilder<List<Package>>(
+        future:
+            _packageService.getByPlaceAndType(widget.place, widget.packageType),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text("Error: $snapshot.error"),
+            );
+          } else {
+            _packages = snapshot.data ?? [];
+            return ListView.builder(
+              itemCount: _packages.length,
+              itemBuilder: (context, index) {
+                return PackageItem(package: _packages[index]);
+              },
+            );
+          }
+        });
   }
 }
 
-class PackageItem extends StatelessWidget {
+class PackageItem extends StatefulWidget {
   const PackageItem({super.key, required this.package});
   final Package package;
 
   @override
+  State<PackageItem> createState() => _PackageItemState();
+}
+
+class _PackageItemState extends State<PackageItem> {
+  bool _isFavorite = false;
+  final PackageDao _packageDao = PackageDao();
+
+  @override
   Widget build(BuildContext context) {
-    return ListTile(title: Text(package.name));
+    final width = MediaQuery.of(context).size.width;
+
+    return FutureBuilder<bool>(
+      future: _packageDao.isFavorite(widget.package),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text("Error: $snapshot.error"),
+          );
+        } else {
+          _isFavorite = snapshot.data ?? false;
+          return Card(
+            child: Column(
+              children: [
+                Image.network(
+                  widget.package.image,
+                  width: width / 2,
+                ),
+                Text(
+                  widget.package.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                Text(widget.package.location),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isFavorite = !_isFavorite;
+                    });
+                    _isFavorite
+                        ? _packageDao.insert(widget.package)
+                        : _packageDao.delete(widget.package);
+                  },
+                  
+                  icon: Icon(Icons.favorite,
+                      color: _isFavorite
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).hintColor),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(widget.package.description),
+                )
+              ],
+            ),
+          );
+        }
+      },
+    );
   }
 }
