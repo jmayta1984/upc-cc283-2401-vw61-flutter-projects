@@ -21,5 +21,9 @@ class PackageDao {
     return maps.isNotEmpty;
   }
 
-
+  Future<List<Package>> fetchFavorites() async {
+    Database db = await AppDatabase.openDb();
+    List maps = await db.query(AppDatabase.tableName);
+    return maps.map((map) => Package.fromMap(map)).toList();
+  }
 }

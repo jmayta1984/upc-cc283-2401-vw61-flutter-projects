@@ -27,4 +27,11 @@ class Package {
       "image": image,
     };
   }
+
+  Package.fromMap(Map<String, dynamic> map)
+      : id = map["id"],
+        name = map["name"],
+        description = map["description"],
+        location = "",
+        image = map["image"];
 }
