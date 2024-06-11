@@ -12,11 +12,11 @@ class MainApp extends StatelessWidget {
   initialize() async {
     await Firebase.initializeApp(
         options: const FirebaseOptions(
-            apiKey: "AIzaSyDy-bNo5e_Y0mclegfeDuf5GLj3trX9yJI",
+            apiKey: "",
             appId:
-                "232325318560-imacc8vc7er3m01gu6q975d9u3u0tlit.apps.googleusercontent.com",
-            messagingSenderId: "jmayta@pucp.edu.pe",
-            projectId: "fir-flutter-e0fe8"));
+                "",
+            messagingSenderId: "",
+            projectId: ""));
   }
 
   @override
